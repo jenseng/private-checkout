@@ -1,0 +1,92 @@
+name: Private Checkout
+description: Check out another private repository in the same organization or enterprise
+author: Jon Jensen
+inputs:
+  repository:
+    description: Repository name with owner, e.g. `my-org/my-repo`
+    required: true
+  ref:
+    description: Branch, tag or SHA to check out, e.g. `main`
+    required: false
+    default: "main"
+  path:
+    description: Relative path under `$GITHUB_WORKSPACE` to place the repository, e.g. `./my-repo`
+    required: false
+    default: "."
+  action-path:
+    description: Subdirectory containing an `action.yml` or `Dockerfile`
+    required: false
+outputs:
+  failure-reason:
+    description: Reason the checkout failed. Mainly used for testing, since we also emit an error message for the user.
+    value: ${{ steps.validate-inputs.outputs.failure-reason || steps.copy-checkout.outputs.failure-reason || 'unknown' }}
+runs:
+  using: composite
+  steps:
+    - name: Validate inputs
+      id: validate-inputs
+      shell: bash
+      env:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.ref }}
+        checkout_path: ${{ inputs.path }}
+        action_path: ${{ inputs.action-path }}
+      run: |
+        die() {
+          failure_reason="$1"
+          echo "failure-reason=$failure_reason" >> $GITHUB_OUTPUT
+          echo "::error::$1"
+          exit 1
+        }
+        [[ "$repository" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]] || die "Invalid repository format, expected 'owner/name', got '$repository'"
+        [[ "$ref" =~ ^[a-fA-F0-9]{7,40}$ ]] || git check-ref-format --normalize "heads/$ref" || die "Invalid ref format, expected a branch, tag or SHA, got '$ref'"
+        [[ "$checkout_path" =~ ^/|../ ]] && die "Invalid path format, expected a relative path, got '$checkout_path'"
+        [[ "$action_path" =~ ^/|../ ]] && die "Invalid action-path format, expected a relative path, got '$action_path'"
+    - name: Prepare checkout action
+      shell: bash
+      run: |
+        mkdir -p .tmp-checkout-private-repo &&
+        cat <<'CHECKOUT_PRIVATE_REPO_EOF' >.tmp-checkout-private-repo/action.yml
+        runs:
+          using: composite
+          steps:
+          - name: Trigger repository checkout
+            if: false
+            uses: ${{ toJSON(format('{0}{1}@{2}', inputs.repository, inputs.action-path && format('/{0}', inputs.action-path) || '', inputs.ref)) }}
+        CHECKOUT_PRIVATE_REPO_EOF
+    - name: Check out repository
+      id: checkout
+      continue-on-error: true
+      uses: ./.tmp-checkout-private-repo
+    - name: Clean up checkout action
+      if: always()
+      shell: bash
+      run: rm -rf .tmp-checkout-private-repo
+    - name: Copy checkout to path
+      id: copy-checkout
+      shell: bash
+      env:
+        repository: ${{ inputs.repository }}
+        ref: ${{ inputs.ref }}
+        checkout_path: ${{ inputs.path }}
+        checkout_step_failed: ${{ steps.checkout.outcome == 'failure' }}
+      run: |
+        die() {
+          failure_reason="$1"
+          echo "failure-reason=$failure_reason" >> $GITHUB_OUTPUT
+          echo "::error::$1"
+          exit 1
+        }
+        expected_checkout_path="$GITHUB_ACTION_PATH/../../../$repository/$ref"
+        [[ -d "$expected_checkout_path" ]] || {
+          echo "::error::Failed to check out $repository@$ref. Confirm that the repository is accessible and that the ref is valid."
+          exit 1
+        }
+        # if the step failed, but the files are there, it just means actions/runner puked on the lack of action.yml or Dockerfile
+        # so emit a helpful hint
+        [[ "$checkout_step_failed" == "true" ]] && {
+          echo "::notice::You can suppress \"Can't find 'action.yml' ...\" errors by creating a dummy action file. Learn more: https://github.com/jenseng/checkout-org-repo#can-i-disable-the-cant-find-actionyml-errors"
+          exit 1
+        }
+        mkdir -p "$GITHUB_WORKSPACE/$checkout_path/"
+        rsync -a "$expected_checkout_path/" "$GITHUB_WORKSPACE/$checkout_path/"
