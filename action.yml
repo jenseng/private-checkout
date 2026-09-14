@@ -19,7 +19,7 @@ inputs:
 outputs:
   failure-reason:
     description: Reason the checkout failed. Mainly used for testing, since we also emit an error message for the user.
-    value: ${{ steps.validate-inputs.outputs.failure-reason || steps.copy-checkout.outputs.failure-reason || 'unknown' }}
+    value: ${{ steps.validate-inputs.outputs.failure-reason || steps.copy-checkout.outputs.failure-reason || '' }}
 runs:
   using: composite
   steps:
@@ -39,9 +39,10 @@ runs:
           exit 1
         }
         [[ "$repository" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]] || die "Invalid repository format, expected 'owner/name', got '$repository'"
-        [[ "$ref" =~ ^[a-fA-F0-9]{7,40}$ ]] || git check-ref-format --normalize "heads/$ref" || die "Invalid ref format, expected a branch, tag or SHA, got '$ref'"
-        [[ "$checkout_path" =~ ^/|../ ]] && die "Invalid path format, expected a relative path, got '$checkout_path'"
-        [[ "$action_path" =~ ^/|../ ]] && die "Invalid action-path format, expected a relative path, got '$action_path'"
+        [[ "$ref" =~ ^[a-fA-F0-9]{7,40}$ ]] || git check-ref-format --normalize "heads/$ref" >/dev/null || die "Invalid ref format, expected a branch, tag or SHA, got '$ref'"
+        [[ "$checkout_path" =~ ^/|../ ]] && die "Invalid path format, expected a safe relative path, got '$checkout_path'"
+        [[ "$action_path" =~ ^/|../ ]] && die "Invalid action-path format, expected a safe relative path, got '$action_path'"
+        true
     - name: Prepare checkout action
       shell: bash
       run: |
@@ -78,15 +79,12 @@ runs:
           exit 1
         }
         expected_checkout_path="$GITHUB_ACTION_PATH/../../../$repository/$ref"
-        [[ -d "$expected_checkout_path" ]] || {
-          echo "::error::Failed to check out $repository@$ref. Confirm that the repository is accessible and that the ref is valid."
-          exit 1
-        }
+        [[ -d "$expected_checkout_path" ]] || die "Failed to check out $repository@$ref. Confirm that the repository is accessible and that the ref is valid."
+
         # if the step failed, but the files are there, it just means actions/runner puked on the lack of action.yml or Dockerfile
         # so emit a helpful hint
         [[ "$checkout_step_failed" == "true" ]] && {
           echo "::notice::You can suppress \"Can't find 'action.yml' ...\" errors by creating a dummy action file. Learn more: https://github.com/jenseng/checkout-org-repo#can-i-disable-the-cant-find-actionyml-errors"
-          exit 1
         }
         mkdir -p "$GITHUB_WORKSPACE/$checkout_path/"
         rsync -a "$expected_checkout_path/" "$GITHUB_WORKSPACE/$checkout_path/"
