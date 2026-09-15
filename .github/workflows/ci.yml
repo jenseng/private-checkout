@@ -8,69 +8,67 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
       - name: Validate repository
         id: validate-repository
-        uses: ./.
+        uses: $/.
         with:
           repository: not good
         continue-on-error: true
       - name: Assert failed
-        uses: ./.github/actions/assert-equal
+        uses: $/.github/actions/assert-equal
         with:
           expected: "Invalid repository format, expected 'owner/name', got 'not good'"
           actual: ${{ steps.validate-repository.outputs.failure-reason }}
       - name: Validate ref
         id: validate-ref
-        uses: ./.
+        uses: $/.
         with:
           repository: ok/good
           ref: "not:valid"
         continue-on-error: true
       - name: Assert failed
-        uses: ./.github/actions/assert-equal
+        uses: $/.github/actions/assert-equal
         with:
           expected: "Invalid ref format, expected a branch, tag or SHA, got 'not:valid'"
           actual: ${{ steps.validate-ref.outputs.failure-reason }}
       - name: Validate path
         id: validate-path
-        uses: ./.
+        uses: $/.
         with:
           repository: ok/good
           path: "../not/good"
         continue-on-error: true
       - name: Assert failed
-        uses: ./.github/actions/assert-equal
+        uses: $/.github/actions/assert-equal
         with:
           expected: "Invalid path format, expected a safe relative path, got '../not/good'"
           actual: ${{ steps.validate-path.outputs.failure-reason }}
       - name: Validate action-path
         id: validate-action-path
-        uses: ./.
+        uses: $/.
         with:
           repository: ok/good
           action-path: "/danger/zone"
         continue-on-error: true
       - name: Assert failed
-        uses: ./.github/actions/assert-equal
+        uses: $/.github/actions/assert-equal
         with:
           expected: "Invalid action-path format, expected a safe relative path, got '/danger/zone'"
           actual: ${{ steps.validate-action-path.outputs.failure-reason }}
       - name: Validate checkout
         id: validate-checkout
-        uses: ./.
+        uses: $/.
         with:
           repository: jenseng/fake-repo
         continue-on-error: true
       - name: Assert failed
-        uses: ./.github/actions/assert-equal
+        uses: $/.github/actions/assert-equal
         with:
           expected: "Failed to check out jenseng/fake-repo@main. Confirm that the repository is accessible and that the ref is valid."
           actual: ${{ steps.validate-checkout.outputs.failure-reason }}
       - name: Happy path
         id: happy-path
-        uses: ./.
+        uses: $/.
         with:
           repository: jenseng/dynamic-uses
           ref: v1
