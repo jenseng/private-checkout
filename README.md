@@ -1,4 +1,4 @@
-# 🚧 Private Checkout 🚧
+# Private Checkout
 
 GitHub Action to check out another private repository in the same organization or enterprise.
 
@@ -17,9 +17,9 @@ This allows you to access files from another private/internal repository, withou
     repository: MyOrg/my-private-shared-repo
 ```
 
-This will check out the `my-private-shared-repo` to the `$GITHUB_WORKSPACE` directory, allowing you to access any scripts/config/files needed for your workflow 🥳.
+This will check out `my-private-shared-repo` into the `$GITHUB_WORKSPACE` directory, allowing you to access any scripts/config/files needed for your workflow 🥳.
 
-**Step 3** (optional): [Create a dummy action file](#can-i-disable-the-cant-find-actionyml-errors) to suppress `Can't find 'action.yml'...` error messages.
+**Step 3** (optional): [Create a dummy action file](#can-i-disable-the-cant-find-actionyml-errors) in your private repository to suppress `Can't find 'action.yml'...` error messages.
 
 ## Configuration
 
@@ -60,6 +60,10 @@ The [GitHub Actions runner](https://github.com/actions/runner) natively supports
   - It skips the actual `uses` step (since we just want to download the files, we don't want to run an action from the target repository 😅)
 - It copies the downloaded files into the target `path`.
 
+### Why do I see `Can't find 'action.yml'...` errors?
+
+This action [relies on](#how-does-it-work) the GitHub Actions runner's action download capability to check out the private repository. While this makes it possible to access private repositories without an additional access token, it can result in these error messages if the specified repository doesn't define a GitHub action. You can safely ignore these errors, but if you find them too annoying they are [easy to suppress](#can-i-disable-the-cant-find-actionyml-errors).
+
 ### Can I disable the `Can't find 'action.yml'...` errors?
 
 Yes! While these errors don't cause any problems, they can be confusing. To suppress these error messages, you need to create a dummy `action.yml` or `Dockerfile` in your target repository. The `Dockerfile` can be empty, whereas `action.yml` needs to contain at least `runs: {"using": "node24"}`.
@@ -68,7 +72,7 @@ If you don't want to define one of these files at the root of your repository, y
 
 ### This action fails with `Failed to check out ...` error. What gives?
 
-This error happens when your private/internal repository doesn't allow access to GitHub Actions from the calling repository. To fix this, go to `Settings` -> `Actions` -> `General`, and set its `Access` to `Accessible from repositories in ...` the organization or enterprise. For example:
+This error happens when your private/internal repository doesn't allow access to GitHub Actions from the calling repository. To fix this, go to your private repository's `Settings` -> `Actions` -> `General`, and set its `Access` to `Accessible from repositories in ...` the organization or enterprise. For example:
 
 ![Actions Access](./actions-access.png)
 

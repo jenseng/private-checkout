@@ -69,7 +69,7 @@ jobs:
       - name: Happy path
         uses: $/.
         with:
-          repository: jenseng/dynamic-uses
+          repository: jenseng/dynamic-uses # this is an action, so no error annotation 🥳
           ref: v1
           path: dymamic-uses
       - name: Assert files exist
@@ -82,7 +82,7 @@ jobs:
       - name: Happy path with hint
         uses: $/.
         with:
-          repository: jenseng/canading-style-sheets
+          repository: jenseng/canading-style-sheets # not an action, so error annotation with a hint 😅
           ref: master
           path: canading-style-sheets
       - name: Assert files exist
