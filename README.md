@@ -52,9 +52,9 @@ Subdirectory containing an `action.yml` or `Dockerfile`. You may want to set thi
 
 ### How does it work?
 
-The [GitHub Actions runner](https://github.com/actions/runner) natively supports running actions from other private/internal repositories. In order to do that, it uses specially scoped access tokens to check out those repositories. This action uses that functionality as follows:
+The [GitHub Actions runner](https://github.com/actions/runner) natively supports running actions from other private/internal repositories. In order to do that, it uses specially scoped access tokens to check out those repositories. This action relies on that functionality as follows:
 
-- It generates a local composite action, with a step that [`uses` an action](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsuses) from the target repository. The action doesn't actually need exist 🤯
+- It generates a local composite action, with a step that [`uses` an action](https://docs.github.com/en/enterprise-cloud@latest/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepsuses) from the target repository. The action doesn't actually need to exist 🤯
 - Then when the local composite action runs:
   - The runner downloads the files from the target repository, thanks to the `uses` reference
   - It skips the actual `uses` step (since we just want to download the files, we don't want to run an action from the target repository 😅)
