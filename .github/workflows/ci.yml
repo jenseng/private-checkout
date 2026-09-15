@@ -67,7 +67,6 @@ jobs:
           expected: "Failed to check out jenseng/fake-repo@main. Confirm that the repository is accessible and that the ref is valid."
           actual: ${{ steps.validate-checkout.outputs.failure-reason }}
       - name: Happy path
-        id: happy-path
         uses: $/.
         with:
           repository: jenseng/dynamic-uses
@@ -77,6 +76,19 @@ jobs:
         shell: bash
         run: |
           if [[ ! -f dymamic-uses/README.md ]]; then
+            echo "::error::Files not checked out correctly"
+            exit 1
+          fi
+      - name: Happy path with hint
+        uses: $/.
+        with:
+          repository: jenseng/canading-style-sheets
+          ref: master
+          path: canading-style-sheets
+      - name: Assert files exist
+        shell: bash
+        run: |
+          if [[ ! -f canading-style-sheets/index.js ]]; then
             echo "::error::Files not checked out correctly"
             exit 1
           fi
