@@ -31,7 +31,7 @@ The repository must either be:
 
 - A private repository in the same organization
 - An internal repository in the same enterprise
-- A public repository ... but if that's the case that case you should just use [actions/checkout](https://github.com/actions/checkout) 😆
+- A public repository ... but if that's the case you should just use [actions/checkout](https://github.com/actions/checkout) 😆
 
 > [!IMPORTANT]
 > Private/internal repositories must have their Actions Access set to `Accessible from repositories in ...` the organization or enterprise. [Learn more](#this-action-fails-with-failed-to-check-out--error-what-gives).
@@ -80,14 +80,16 @@ Note that this action **does not** support checking out private/internal reposit
 
 ## Comparing Different Approaches
 
+The default GitHub Actions access token can only access the current repository and public repositories. To access a private repository, there are a few different approaches you can take, each with slightly different tradeoffs.
+
 ### jenseng/private-checkout
 
 You can use this action to check out a private/internal repository.
 
 - 👍 Relatively simple
-- 👍 Doesn't need to be rotated
+- 👍 No credentials ever need to be rotated
 - 👍 Access is controlled through existing Actions policies
-- 👍 Only grants read-only access
+- 👍 No risk of accidentally granting write access (access is read-only)
 - 👍 No tokens/credentials can be exfiltrated by a malicious GitHub Actions run
 - 👎 Unless you [create a dummy action file](#can-i-disable-the-cant-find-actionyml-errors), you'll see confusing `Can't find 'action.yml', 'action.yaml' or 'Dockerfile' for action ...` error annotations
 
@@ -98,7 +100,7 @@ You can use a [Personal Access Token](https://docs.github.com/en/authentication/
 - 👍 Relatively simple
 - 👎 Tied to a specific user. If the user leaves the org, the token stops working
 - 👎 Eventually expires, meaning you'll need to rotate it
-- 👎 Potentially grants more access than is needed
+- 👎 Potentially grants more access than is needed (repository write access, or other permissions)
 - 👎 PAT can potentially be exfiltrated by a malicious GitHub Actions run
 
 ### GitHub Apps
@@ -108,7 +110,7 @@ You can use a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/
 - 👍 Not tied to a user
 - 👍 Doesn't need to be rotated
 - 👎 More complex than a PAT
-- 👎 Potentially grants more access than is needed
+- 👎 Potentially grants more access than is needed (repository write access, or other permissions)
 - 👎 Access token can potentially be exfiltrated from a malicious GitHub Actions run
 - 👎 Depending on how your are minting/obtaining access tokens, the private key can potentially be exfiltrated by a malicious GitHub Actions run
 
