@@ -32,6 +32,8 @@ runs:
         checkout_path: ${{ inputs.path }}
         action_path: ${{ inputs.action-path }}
       run: |
+        # validate inputs
+
         die() {
           failure_reason="$1"
           echo "failure-reason=$failure_reason" >> $GITHUB_OUTPUT
@@ -72,6 +74,8 @@ runs:
         checkout_path: ${{ inputs.path }}
         checkout_step_failed: ${{ steps.checkout.outcome == 'failure' }}
       run: |
+        # copy files
+
         die() {
           failure_reason="$1"
           echo "failure-reason=$failure_reason" >> $GITHUB_OUTPUT
@@ -86,5 +90,14 @@ runs:
         [[ "$checkout_step_failed" == "true" ]] && {
           echo "::notice::You can suppress \"Can't find 'action.yml' ...\" errors by creating a dummy action file. Learn more: https://github.com/jenseng/checkout-org-repo#can-i-disable-the-cant-find-actionyml-errors"
         }
-        mkdir -p "$GITHUB_WORKSPACE/$checkout_path/"
-        rsync -a "$expected_checkout_path/" "$GITHUB_WORKSPACE/$checkout_path/"
+        target_path="$GITHUB_WORKSPACE"
+        if [[ -n "$checkout_path" ]]; then
+          target_path="$GITHUB_WORKSPACE/$checkout_path"
+        fi
+        mkdir -p "$target_path"
+        if which rsync >/dev/null 2>&1; then
+          rsync -a "$expected_checkout_path/" "$target_path/"
+        else
+          shopt -s dotglob
+          cp -a "$expected_checkout_path/"* "$target_path/"
+        fi
