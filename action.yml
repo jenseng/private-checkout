@@ -40,7 +40,7 @@ runs:
           echo "::error::$1"
           exit 1
         }
-        [[ "$repository" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]] || die "Invalid repository format, expected 'owner/name', got '$repository'"
+        [[ "$repository" =~ ^[a-zA-Z0-9_\-]+/[a-zA-Z0-9._\-]+$ ]] || die "Invalid repository format, expected 'owner/name', got '$repository'"
         [[ "$ref" =~ ^[a-fA-F0-9]{7,40}$ ]] || git check-ref-format --normalize "heads/$ref" >/dev/null || die "Invalid ref format, expected a branch, tag or SHA, got '$ref'"
         [[ "$checkout_path" =~ ^/|../ ]] && die "Invalid path format, expected a safe relative path, got '$checkout_path'"
         [[ "$action_path" =~ ^/|../ ]] && die "Invalid action-path format, expected a safe relative path, got '$action_path'"
